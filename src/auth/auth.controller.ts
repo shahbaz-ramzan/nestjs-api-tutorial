@@ -1,17 +1,21 @@
-import { Body, Controller, Post, Req } from '@nestjs/common';
+import { Body, Controller, Post, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthService } from './auth.service';
+import { AuthDto } from './dto';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('signup')
-  signup(@Req() req: Request, @Body() dto: any) {
+  @UseInterceptors(FileInterceptor(''))
+  signup(@Body() dto: AuthDto) {
+    console.log('Received signup request:', dto);
     return this.authService.signup(dto);
   }
 
   @Post('signin')
-  signin(@Body() dto: any) {
-    return this.authService.signin(dto);
+  signin() {
+    return this.authService.signin();
   }
 }
