@@ -15,7 +15,9 @@ export class AuthController {
   }
 
   @Post('signin')
-  signin() {
-    return this.authService.signin();
+  @UseInterceptors(FileInterceptor(''))
+  signin(@Body() dto: AuthDto) {
+    console.log('Received signin request:', dto);
+    return this.authService.signin(dto);
   }
 }
