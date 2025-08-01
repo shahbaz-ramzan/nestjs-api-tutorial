@@ -2,9 +2,13 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { AuthDto } from './dto';
 import * as argon from 'argon2';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwt: JwtService,
+  ) {}
 
   async signup(dto: AuthDto) {
     // Hash the password
@@ -19,13 +23,7 @@ export class AuthService {
         },
       });
 
-      // Remove the hash from the response using destructuring
-      const { hash, ...userWithoutHash } = user;
-
-      return {
-        message: 'User signed up successfully',
-        user: userWithoutHash,
-      };
+      return this.signToken(user.id, user.email);
     } catch (error) {
       if (error.code === 'P2002') {
         throw new ForbiddenException('Credentials taken');
@@ -51,12 +49,18 @@ export class AuthService {
     if (!passwordMatches) {
       throw new ForbiddenException('Credentials incorrect');
     }
-    // Remove the hash from the response using destructuring
-    const { hash, ...userWithoutHash } = user;
-    // Return the user without the hash
+    return this.signToken(user.id, user.email);
+  }
+
+  async signToken(
+    userId: number,
+    email: string,
+  ): Promise<{ access_token: string; expires_in: number }> {
+    const payload = { sub: userId, email };
+    const token = await this.jwt.signAsync(payload);
     return {
-      message: 'User signed in successfully',
-      user: userWithoutHash,
+      access_token: token,
+      expires_in: 3600, // 1 hour in seconds
     };
   }
 
